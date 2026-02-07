@@ -1,3 +1,5 @@
+
+
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import pandas as pd
@@ -17,6 +19,8 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
+
+import requests
 
 app = Flask(__name__)
 @app.route("/")
@@ -107,6 +111,41 @@ def export_csv():
 
     return send_file(buffer, mimetype="text/csv", as_attachment=True,
                      download_name=f"{country}.csv")
+@app.route("/summary", methods=["POST"])
+def summary():
+    data = request.json
+
+    country = data["country"]
+    parameters = data["parameters"]
+    years = data["years"]
+    predictions = data["predictions"]
+    chart = data["chart"]
+
+    preview = ", ".join(map(str, years[:6]))
+
+    lines = []
+    for p in parameters:
+        vals = predictions.get(p, [])[:6]
+        vals = ", ".join([str(round(v,2)) for v in vals])
+        lines.append(f"{p}: {vals}")
+
+    prompt = f"""
+Provide 3 short insights and 3 suggestions.
+Country: {country}
+Chart: {chart}
+Years: {preview}
+Data:
+{chr(10).join(lines)}
+"""
+
+    API_KEY = os.environ.get("GEMINI_KEY")
+
+    r = requests.post(
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}",
+        json={"contents":[{"role":"user","parts":[{"text":prompt}]}]}
+    )
+
+    return jsonify(r.json())
 
 # ---------------- PDF Export ----------------
 @app.route("/export/pdf")
