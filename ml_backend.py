@@ -145,11 +145,16 @@ Data:
     API_KEY = os.environ.get("GEMINI_KEY")
 
     r = requests.post(
-        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}",
-        json={"contents":[{"role":"user","parts":[{"text":prompt}]}]}
+    f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}",
+    json={"contents":[{"role":"user","parts":[{"text":prompt}]}]}
     )
-
-    return jsonify(r.json())
+    data = r.json()
+    try:
+        text = data["candidates"][0]["content"]["parts"][0]["text"]
+    except:
+        text = "AI summary unavailable"
+    
+    return jsonify({"summary": text})
 
 # ---------------- PDF Export ----------------
 @app.route("/export/pdf")
