@@ -23,10 +23,14 @@ from reportlab.lib.units import inch
 import requests
 
 app = Flask(__name__)
+CORS(
+    app,
+    resources={r"/*": {"origins": "*"}},
+    supports_credentials=True
+)
 @app.route("/")
 def health():
     return {"message": "EcoVision backend is live"}
-CORS(app)
 # --- Load dataset safely in cloud ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 df = pd.read_csv(os.path.join(BASE_DIR, "gdpdataset_cleaned.csv"))
